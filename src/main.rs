@@ -37,8 +37,8 @@ impl GameOfLife {
             .into_iter()
             .enumerate()
             .map(|(index, c)| {
-                let neighboars = self.count_neighboars(index);
-                match neighboars {
+                let neighbors = self.count_neighbors(index);
+                match neighbors {
                     2 => c,
                     3 => Cell(true),
                     _ => Cell(false),
@@ -60,7 +60,7 @@ impl GameOfLife {
             if i > 0 && i % self.width == 0 {
                 println!("");
             }
-            print!("{}", self.count_neighboars(i));
+            print!("{}", self.count_neighbors(i));
         })
     }
 
@@ -68,7 +68,7 @@ impl GameOfLife {
         (0..count).map(|_| Cell(random::<bool>())).collect()
     }
 
-    fn count_neighboars(&self, index: usize) -> usize {
+    fn count_neighbors(&self, index: usize) -> usize {
         let (x, y) = self.index_to_coords(index);
         let x = x as isize;
         let y = y as isize;
