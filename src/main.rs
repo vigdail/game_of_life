@@ -88,7 +88,7 @@ impl GameOfLife {
     pub fn print_neighbors(&self) {
         self.field.iter().enumerate().for_each(|(i, _)| {
             if i > 0 && i % self.width == 0 {
-                println!("");
+                println!();
             }
             print!("{}", self.count_neighbors(i));
         })
@@ -104,8 +104,7 @@ impl GameOfLife {
         let y = y as isize;
 
         (-1..=1)
-            .map(|i| (-1..=1).map(move |j| (i, j)))
-            .flatten()
+            .flat_map(|i| (-1..=1).map(move |j| (i, j)))
             .filter(|(i, j)| *i != 0 || *j != 0)
             .filter(|(i, j)| self.is_alive(x + i, y + j))
             .count()
@@ -125,16 +124,12 @@ impl GameOfLife {
 
 impl Display for GameOfLife {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.field
-            .iter()
-            .enumerate()
-            .map(|(i, c)| {
-                if i > 0 && i % self.width == 0 {
-                    writeln!(f, "")?;
-                }
-                write!(f, "{}", c)
-            })
-            .collect::<Result<_, _>>()
+        self.field.iter().enumerate().try_for_each(|(i, c)| {
+            if i > 0 && i % self.width == 0 {
+                writeln!(f)?;
+            }
+            write!(f, "{}", c)
+        })
     }
 }
 
