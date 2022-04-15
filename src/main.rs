@@ -113,12 +113,16 @@ fn clear_screen() {
 }
 
 fn main() {
-    let mut game = GameOfLife::new(5, 5);
+    let mut game = GameOfLife::new(30, 30);
     while game.field.iter().any(|c| c.is_alive()) {
+        let start_time = std::time::Instant::now();
         clear_screen();
         println!("{}", game);
         game.update();
-        std::thread::sleep(Duration::from_millis(1000));
+        let end_time = std::time::Instant::now();
+        std::thread::sleep(
+            Duration::from_secs_f32(1.0 / 30.0).saturating_sub(end_time - start_time),
+        );
     }
     clear_screen();
     println!("{}", game);
@@ -140,7 +144,7 @@ mod tests {
     }
 
     #[test]
-    fn index() {
+    fn index_test() {
         let game = GameOfLife::new(10, 5);
         assert_eq!(game.index(0, 0), 0);
         assert_eq!(game.index(1, 0), 1);
