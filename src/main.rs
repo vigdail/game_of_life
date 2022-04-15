@@ -1,10 +1,23 @@
 use rand::prelude::random;
 use std::{fmt::Display, time::Duration};
 
+pub enum WrapMode {
+    Wrap,
+    NoWrap,
+}
+
 #[derive(Default, Clone, Copy)]
-struct Cell(bool);
+pub struct Cell(bool);
 
 impl Cell {
+    fn alive() -> Self {
+        Cell(true)
+    }
+
+    fn dead() -> Self {
+        Cell(false)
+    }
+
     fn is_alive(&self) -> bool {
         self.0
     }
@@ -16,18 +29,20 @@ impl Display for Cell {
     }
 }
 
-struct GameOfLife {
+pub struct GameOfLife {
     width: usize,
     height: usize,
     field: Vec<Cell>,
+    wrap: WrapMode,
 }
 
 impl GameOfLife {
-    pub fn new(width: usize, height: usize) -> Self {
+    pub fn new(width: usize, height: usize, wrap: WrapMode) -> Self {
         Self {
             width,
             height,
             field: GameOfLife::generate_field(width * height),
+            wrap,
         }
     }
     pub fn update(&mut self) {
@@ -40,22 +55,37 @@ impl GameOfLife {
                 let neighbors = self.count_neighbors(index);
                 match neighbors {
                     2 => c,
-                    3 => Cell(true),
-                    _ => Cell(false),
+                    3 => Cell::alive(),
+                    _ => Cell::dead(),
                 }
             })
             .collect()
     }
 
-    pub fn is_alive(&self, x: isize, y: isize) -> bool {
-        let x = (x + self.width as isize) as usize % self.width;
-        let y = (y + self.height as isize) as usize % self.height;
-        let index = self.index(x, y);
-        self.field[index].is_alive()
+    pub fn get(&self, x: isize, y: isize) -> Option<&Cell> {
+        match self.wrap {
+            WrapMode::Wrap => {
+                let x = (x + self.width as isize) as usize % self.width;
+                let y = (y + self.height as isize) as usize % self.height;
+                let index = self.index(x, y);
+                self.field.get(index)
+            }
+            WrapMode::NoWrap => {
+                if x < 0 || x >= self.width as isize || y < 0 || y >= self.height as isize {
+                    None
+                } else {
+                    let index = self.index(x as usize, y as usize);
+                    self.field.get(index)
+                }
+            }
+        }
     }
 
-    #[allow(dead_code)]
-    pub fn print_n(&self) {
+    pub fn is_alive(&self, x: isize, y: isize) -> bool {
+        self.get(x, y).map(|c| c.is_alive()).unwrap_or(false)
+    }
+
+    pub fn print_neighbors(&self) {
         self.field.iter().enumerate().for_each(|(i, _)| {
             if i > 0 && i % self.width == 0 {
                 println!("");
@@ -113,7 +143,7 @@ fn clear_screen() {
 }
 
 fn main() {
-    let mut game = GameOfLife::new(30, 30);
+    let mut game = GameOfLife::new(30, 30, WrapMode::Wrap);
     while game.field.iter().any(|c| c.is_alive()) {
         let start_time = std::time::Instant::now();
         clear_screen();
@@ -130,11 +160,11 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use crate::GameOfLife;
+    use crate::{GameOfLife, WrapMode};
 
     #[test]
     fn index_to_coords_test() {
-        let game = GameOfLife::new(10, 5);
+        let game = GameOfLife::new(10, 5, WrapMode::NoWrap);
 
         assert_eq!(game.index_to_coords(0), (0, 0));
         assert_eq!(game.index_to_coords(1), (1, 0));
@@ -145,7 +175,7 @@ mod tests {
 
     #[test]
     fn index_test() {
-        let game = GameOfLife::new(10, 5);
+        let game = GameOfLife::new(10, 5, WrapMode::Wrap);
         assert_eq!(game.index(0, 0), 0);
         assert_eq!(game.index(1, 0), 1);
         assert_eq!(game.index(5, 0), 5);
